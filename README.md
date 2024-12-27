@@ -35,7 +35,7 @@ podman run -it --rm --name bitcoind -v /srv/crypto/btc/data:/data -v /home/foo/.
 `bitcoin-cli` is included and can be executed from the running bitcoind container, for example:
 
 ```
-podman exec -it bitcoind /app/bitcoin-cli -datadir=/data listwallets
+podman exec -it bitcoind /app/bitcoin-cli listwallets
 ```
 
 ## Configure bitcoind to use the tor instance

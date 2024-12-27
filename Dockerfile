@@ -38,6 +38,9 @@ COPY --from=build /s6/ /
 # tor service files
 COPY ./s6/ /etc/s6-overlay/s6-rc.d/
 
+# bitcoin.conf defaults
+COPY ./config/ /root/.bitcoin/
+
 WORKDIR /app
 COPY --from=build /src/src/bitcoind /app/bitcoind
 COPY --from=build /src/src/bitcoin-cli /app/bitcoin-cli
