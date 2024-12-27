@@ -1,4 +1,6 @@
-# buildah heredoc support not available in Ubuntu 24...really? :/
+###################
+# Build container #
+###################
 
 FROM ubuntu:latest as build
 
@@ -11,6 +13,16 @@ RUN ./autogen.sh && ./configure --disable-tests --disable-bench --disable-gui-te
 RUN make -j24
 RUN strip src/bitcoind src/bitcoin-cli src/bitcoin-tx src/bitcoin-util src/bitcoin-wallet
 
+# Unpack s6 into the build container, which will then
+# be copied to the runtime container.
+RUN mkdir /s6
+ARG S6_OVERLAY_VERSION=3.2.0.2
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+RUN tar -C /s6 -Jxpf /tmp/s6-overlay-noarch.tar.xz
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
+RUN tar -C /s6 -Jxpf /tmp/s6-overlay-x86_64.tar.xz
+
+
 ############################
 # Create runtime container #
 ############################
@@ -20,13 +32,10 @@ FROM ubuntu:latest
 # install tor and library dependencies for bitcoin
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y tor libevent-2.1-7t64 libevent-core-2.1-7t64 libevent-extra-2.1-7t64 libevent-pthreads-2.1-7t64 libsqlite3-0 libzmq5 xz-utils && apt clean
 
-ARG S6_OVERLAY_VERSION=3.2.0.2
-ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
-RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz
-ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
-RUN tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz
+# s6overlay
+COPY --from=build /s6/ /
 
-# Add tor service files
+# tor service files
 COPY ./s6/ /etc/s6-overlay/s6-rc.d/
 
 WORKDIR /app
