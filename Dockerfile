@@ -5,20 +5,10 @@ FROM ubuntu:latest as build
 ARG BITCOIN_TAG=v28.0
 
 WORKDIR /src
-RUN apt update
-RUN apt install -y git build-essential cmake pkg-config python3 libevent-dev libboost-dev libsqlite3-dev libzmq3-dev systemtap-sdt-dev
+RUN apt update && apt install -y git build-essential pkg-config autoconf libtool python3 libevent-dev libboost-dev libsqlite3-dev libzmq3-dev systemtap-sdt-dev
 RUN git clone -v -b ${BITCOIN_TAG} https://github.com/bitcoin/bitcoin.git .
-
-# <=v28.0 uses autoconf and make
-RUN apt install -y autoconf libtool
-RUN ./autogen.sh
-RUN ./configure --disable-tests --disable-bench --disable-gui-tests --disable-man --disable-debug --disable-fuzz-binary --disable-shared
+RUN ./autogen.sh && ./configure --disable-tests --disable-bench --disable-gui-tests --disable-man --disable-debug --disable-fuzz-binary --disable-shared
 RUN make -j24
-
-# >v28.0 uses cmake
-#RUN cmake -B build -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g0"
-#RUN cmake --build build -j 16
-
 RUN strip src/bitcoind src/bitcoin-cli src/bitcoin-tx src/bitcoin-util src/bitcoin-wallet
 
 ############################
